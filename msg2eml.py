@@ -8,6 +8,7 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from email.utils import format_datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 if getattr(sys, 'frozen', False):
     # PyInstallerで実行中
@@ -44,12 +45,12 @@ print('------ 変換元/出力先 ------')
 print(f"Input Directory: {IN_DIR}")
 print(f"Output Directory: {OUT_DIR}")
 
-print('------ 変換開始 ------')
-for msg_path in glob.glob(str(IN_DIR / "*.msg")):
-    name = Path(msg_path).stem
+# MSGファイルをEMLに変換する関数
+def convertMsgToEml(msgPath):
+    name = Path(msgPath).stem
     emlPath = OUT_DIR / f"{name}.eml"
 
-    msg = extract_msg.Message(msg_path)
+    msg = extract_msg.Message(msgPath)
 
     #  EML本体をMIMEで手動組み立て 
     mime = MIMEMultipart()
@@ -115,9 +116,21 @@ for msg_path in glob.glob(str(IN_DIR / "*.msg")):
 
     #  EMLファイル書き出し
     emlPath.write_bytes(mime.as_bytes())
+    return msgPath, emlPath
 
-    print(f"  Converted:")
-    print(f"    {msg_path}")
-    print(f"      -> {emlPath}")
 
+
+msgPaths = glob.glob(str(IN_DIR / "*.msg"))
+
+print('------ 変換開始 ------')
+with ThreadPoolExecutor() as executor:
+    futures = {executor.submit(convertMsgToEml, p): p for p in msgPaths}
+    for future in as_completed(futures):
+        try:
+            msgPath, emlPath = future.result()
+            print(f" Converted:")
+            print(f"  {msgPath}")
+            print(f"  -> {emlPath}")
+        except Exception as e:
+            print(f" Error: {futures[future]} -> {e}")
 print('------ 変換完了 ------')

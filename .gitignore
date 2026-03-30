@@ -211,3 +211,5 @@ chatworkEnv.ini
 
 *.eml
 *.msg
+multi.txt
+*.bat
