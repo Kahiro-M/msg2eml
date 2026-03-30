@@ -2,6 +2,10 @@ import os
 import glob
 import extract_msg
 from pathlib import Path
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 
 
 scriptDir = Path(__file__).resolve().parent
@@ -30,7 +34,6 @@ ATT_DIR = OUT_DIR / "attachments"
 
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 ATT_DIR.mkdir(parents=True, exist_ok=True)
-msgDir = Path(scriptDir)
 
 for msg_path in glob.glob(str(IN_DIR / "*.msg")):
     name = Path(msg_path).stem
@@ -40,21 +43,39 @@ for msg_path in glob.glob(str(IN_DIR / "*.msg")):
 
     msg = extract_msg.Message(msg_path)
 
-    # EML本体を書き出し
-    # os.chdir(OUT_DIR)
-    emlPath.write_bytes(msg.exportBytes())
+    #  EML本体をMIMEで手動組み立て 
+    mime = MIMEMultipart()
+    mime["Subject"] = msg.subject or ""
+    mime["From"]    = msg.sender or ""
+    mime["To"]      = msg.to or ""
+    mime["Date"]    = str(msg.date) if msg.date else ""
 
-    # 添付を書き出し
-    # ※添付の仕様（埋め込み/通常添付等）によっては、出力された形式が異なる場合があります
-    for i, attach in enumerate(msg.attachments):
-        # 添付名が取れない場合があるのでフォールバック
-        attach_name = attach.longFilename or attach.shortFilename or f"attachment_{i+1}"
+    # 本文（HTML優先、なければプレーンテキスト）
+    body_html  = msg.htmlBody
+    body_plain = msg.body
 
-        out_file = base_attach_dir / attach_name
-        # 文字コード等で失敗する場合は try/except が必要になることがあります
-        with open(out_file, "wb") as f:
-            f.write(attach.data)
+    if body_html:
+        # bytes の場合はデコード
+        if isinstance(body_html, bytes):
+            body_html = body_html.decode("utf-8", errors="replace")
+        mime.attach(MIMEText(body_html, "html", "utf-8"))
+    elif body_plain:
+        if isinstance(body_plain, bytes):
+            body_plain = body_plain.decode("utf-8", errors="replace")
+        mime.attach(MIMEText(body_plain, "plain", "utf-8"))
 
-    # os.chdir(msgDir)
+    #  添付ファイル 
+    for attach in msg.attachments:
+        if attach.data is None:
+            continue
+        attach_name = attach.longFilename or attach.shortFilename or "attachment"
+        part = MIMEBase("application", "octet-stream")
+        part.set_payload(attach.data)
+        encoders.encode_base64(part)
+        part.add_header("Content-Disposition", "attachment", filename=attach_name)
+        mime.attach(part)
+
+    #  EMLファイル書き出し
+    emlPath.write_bytes(mime.as_bytes())
 
     print(f"Converted: {msg_path} -> {emlPath}")
