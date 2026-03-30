@@ -208,3 +208,6 @@ __marimo__/
 chatworkEnv.ini
 .vscode/*
 *.csv
+
+*.eml
+*.msg

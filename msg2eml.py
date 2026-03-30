@@ -25,21 +25,17 @@ if not os.path.exists("input_msg"):
     print('Error: "input_msg"フォルダが見つかりません。')
     print('変換元のMSGファイルが格納されている"input_msg"フォルダを指定してください。')
     inputDir = input('フォルダパス: ')
-    IN_DIR = Path(inputDir)
+    TMP_IN_DIR = Path(inputDir.strip().strip("'\"")).resolve()
 else:
-    IN_DIR = Path("input_msg")
+    TMP_IN_DIR = Path("input_msg")
 
+IN_DIR = TMP_IN_DIR.resolve()
 OUT_DIR = Path("output_eml")
-ATT_DIR = OUT_DIR / "attachments"
-
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-ATT_DIR.mkdir(parents=True, exist_ok=True)
 
 for msg_path in glob.glob(str(IN_DIR / "*.msg")):
     name = Path(msg_path).stem
     emlPath = OUT_DIR / f"{name}.eml"
-    base_attach_dir = ATT_DIR / name
-    base_attach_dir.mkdir(parents=True, exist_ok=True)
 
     msg = extract_msg.Message(msg_path)
 
