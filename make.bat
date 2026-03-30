@@ -1,0 +1,1 @@
+pyinstaller --onefile --icon=icon.ico msg2eml.py -n msg2eml
