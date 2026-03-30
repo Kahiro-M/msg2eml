@@ -7,6 +7,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+from email.utils import format_datetime
 
 if getattr(sys, 'frozen', False):
     # PyInstallerで実行中
@@ -18,7 +19,7 @@ else:
 os.chdir(baseDir)
 
 print('====== MSG to EML Converter ======')
-print('                           v.1.0.0')
+print('                           v.1.0.1')
 
 if not extract_msg:
     print('Error: "extract_msg"ライブラリが見つかりません。')
@@ -52,10 +53,40 @@ for msg_path in glob.glob(str(IN_DIR / "*.msg")):
 
     #  EML本体をMIMEで手動組み立て 
     mime = MIMEMultipart()
+    # 必須項目をセット（存在しない場合は空文字列）
     mime["Subject"] = msg.subject or ""
     mime["From"]    = msg.sender or ""
     mime["To"]      = msg.to or ""
-    mime["Date"]    = str(msg.date) if msg.date else ""
+
+    # CcとBccは存在する場合のみセット
+    if msg.cc:
+        mime["Cc"] = msg.cc or ""
+    if msg.bcc:
+        mime["Bcc"] = msg.bcc or ""
+
+    # 送信日時
+    if msg.date:
+        if msg.date.tzinfo is None:
+            from datetime import timezone, timedelta
+            jst = timezone(timedelta(hours=9))
+            aware_date = msg.date.replace(tzinfo=jst)
+            mime["Date"] = format_datetime(aware_date)
+        else:
+            mime["Date"] = format_datetime(msg.date)
+    else:
+        mime["Date"] = ""
+
+    # 受信日時
+    if msg.receivedTime:
+        if msg.receivedTime.tzinfo is None:
+            from datetime import timezone, timedelta
+            jst = timezone(timedelta(hours=9))
+            aware_date = msg.receivedTime.replace(tzinfo=jst)
+            mime["Received"] = format_datetime(aware_date)
+        else:
+            mime["Received"] = format_datetime(msg.receivedTime)
+    else:
+        mime["Received"] = ""
 
     # 本文（HTML優先、なければプレーンテキスト）
     body_html  = msg.htmlBody
