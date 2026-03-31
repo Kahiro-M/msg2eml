@@ -45,6 +45,13 @@ print('------ 変換元/出力先 ------')
 print(f"Input Directory: {IN_DIR}")
 print(f"Output Directory: {OUT_DIR}")
 
+# サロゲート文字を含む可能性がある文字列を安全なUTF-8文字列に変換する
+def sanitizeStr(value: str | None) -> str:
+    if not value:
+        return ""
+    # surrogateescape でエンコードし、不正文字を '?' に置換して戻す
+    return value.encode("utf-8", errors="replace").decode("utf-8", errors="replace")
+
 # MSGファイルをEMLに変換する関数
 def convertMsgToEml(msgPath):
     name = Path(msgPath).stem
@@ -55,15 +62,15 @@ def convertMsgToEml(msgPath):
     #  EML本体をMIMEで手動組み立て 
     mime = MIMEMultipart()
     # 必須項目をセット（存在しない場合は空文字列）
-    mime["Subject"] = msg.subject or ""
-    mime["From"]    = msg.sender or ""
-    mime["To"]      = msg.to or ""
+    mime["Subject"] = sanitizeStr(msg.subject) or ""
+    mime["From"]    = sanitizeStr(msg.sender) or ""
+    mime["To"]      = sanitizeStr(msg.to) or ""
 
     # CcとBccは存在する場合のみセット
-    if msg.cc:
-        mime["Cc"] = msg.cc or ""
-    if msg.bcc:
-        mime["Bcc"] = msg.bcc or ""
+    if sanitizeStr(msg.cc):
+        mime["Cc"] = sanitizeStr(msg.cc) or ""
+    if sanitizeStr(msg.bcc):
+        mime["Bcc"] = sanitizeStr(msg.bcc) or ""
 
     # 送信日時
     if msg.date:
