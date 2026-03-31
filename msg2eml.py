@@ -138,14 +138,12 @@ def convertMsgToEml(msgPath):
 msgPaths = glob.glob(str(IN_DIR / "*.msg"))
 
 print('------ 変換開始 ------')
-with ThreadPoolExecutor() as executor:
-    futures = {executor.submit(convertMsgToEml, p): p for p in msgPaths}
-    for future in as_completed(futures):
-        try:
-            msgPath, emlPath = future.result()
-            print(f" Converted:")
-            print(f"  {msgPath}")
-            print(f"  -> {emlPath}")
-        except Exception as e:
-            print(f" Error: {futures[future]} -> {e}")
+for msgPath in msgPaths:
+    try:
+        msgPath, emlPath = convertMsgToEml(msgPath)
+        print(f" Converted:")
+        print(f"  {msgPath}")
+        print(f"  -> {emlPath}")
+    except Exception as e:
+        print(f" Error: {msgPath} -> {e}")
 print('------ 変換完了 ------')
