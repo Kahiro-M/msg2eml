@@ -10,6 +10,10 @@ from email import encoders
 from email.utils import format_datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 if getattr(sys, 'frozen', False):
     # PyInstallerで実行中
