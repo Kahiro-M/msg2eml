@@ -114,9 +114,17 @@ def convertMsgToEml(msgPath):
     for attach in msg.attachments:
         if attach.data is None:
             continue
-        attach_name = attach.longFilename or attach.shortFilename or "attachment"
+        # attach.data が bytes でない場合はスキップまたは変換
+        atchData = attach.data
+        if not isinstance(atchData, bytes):
+            try:
+                atchData = bytes(atchData)
+            except Exception:
+                continue  # 変換不能な場合はこの添付をスキップ
+
+        attach_name = attach.name or attach.longFilename or attach.shortFilename or attach.data.subject or attach.displayName or "attachment"
         part = MIMEBase("application", "octet-stream")
-        part.set_payload(attach.data)
+        part.set_payload(atchData)
         encoders.encode_base64(part)
         part.add_header("Content-Disposition", "attachment", filename=attach_name)
         mime.attach(part)
