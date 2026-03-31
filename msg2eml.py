@@ -9,6 +9,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 from email.utils import format_datetime
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import datetime
 
 if getattr(sys, 'frozen', False):
     # PyInstallerで実行中
@@ -138,6 +139,7 @@ def convertMsgToEml(msgPath):
 msgPaths = glob.glob(str(IN_DIR / "*.msg"))
 
 print('------ 変換開始 ------')
+startTimestamp = datetime.now()
 for msgPath in msgPaths:
     try:
         msgPath, emlPath = convertMsgToEml(msgPath)
@@ -147,3 +149,5 @@ for msgPath in msgPaths:
     except Exception as e:
         print(f" Error: {msgPath} -> {e}")
 print('------ 変換完了 ------')
+finishTimestamp = datetime.now()
+print(startTimestamp.strftime("%Y-%m-%d %H:%M:%S") + " -> " + finishTimestamp.strftime("%Y-%m-%d %H:%M:%S"))
