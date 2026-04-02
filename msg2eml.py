@@ -25,7 +25,7 @@ else:
 os.chdir(baseDir)
 
 print('====== MSG to EML Converter ======')
-print('                           v.1.0.1')
+print('                           v.1.1.0')
 
 if not extract_msg:
     print('Error: "extract_msg"ライブラリが見つかりません。')
