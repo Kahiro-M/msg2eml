@@ -25,7 +25,7 @@ else:
 os.chdir(baseDir)
 
 print('====== MSG to EML Converter ======')
-print('                           v.1.1.0')
+print('                           v.1.2.0')
 
 if not extract_msg:
     print('Error: "extract_msg"ライブラリが見つかりません。')
@@ -59,8 +59,15 @@ def sanitizeStr(value: str | None) -> str:
 
 # MSGファイルをEMLに変換する関数
 def convertMsgToEml(msgPath):
-    name = Path(msgPath).stem
-    emlPath = OUT_DIR / f"{name}.eml"
+    # ファイルパス文字列をPathオブジェクトに変換
+    msgPath = Path(msgPath)
+
+    # IN_DIR からの相対パスを取得してサブディレクトリ構造を再現
+    relative = msgPath.relative_to(IN_DIR)
+    emlPath = OUT_DIR / relative.with_suffix(".eml")
+
+    # 出力先サブディレクトリを作成
+    emlPath.parent.mkdir(parents=True, exist_ok=True)
 
     msg = extract_msg.Message(msgPath)
 
@@ -140,7 +147,7 @@ def convertMsgToEml(msgPath):
 
 
 
-msgPaths = glob.glob(str(IN_DIR / "*.msg"))
+msgPaths = list(IN_DIR.rglob("*.msg"))
 
 print('------ 変換開始 ------')
 startTimestamp = datetime.now()
